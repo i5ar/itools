@@ -1,5 +1,5 @@
-iSar Tools
-==========
+iTools
+======
 
 Another architecture Blender addon.
 After installing a new tab will show under the Tool Shelf from 3D viewport.

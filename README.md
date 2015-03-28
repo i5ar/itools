@@ -1,7 +1,7 @@
 iSar Tools
 ==========
 
-Just another architecture Blender addon.
+Another architecture Blender addon.
 After installation a new tab will show under the Tool Shelf from 3D viewport.
 
 # Installation

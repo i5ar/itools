@@ -20,7 +20,7 @@ bl_info = {
     "name": "iSar Tools",
     "author": "iSar",
     "version": (0, 1, 5),
-    "blender": (2, 7, 2), 
+    "blender": (2, 7, 3),
     "location": "object",
     "description": "architecture workflow",
     "warning": "",
@@ -52,14 +52,14 @@ isar_ascii_logo = '''\
      ##############        #####     ###
 '''
 
-my_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBounds', 'iBoundingBoxMesh', 'iLink', 'iWipe', 'iOrthoCam', 'iConsole', 'iNtersect', 'iPoint', 'iGeometry', 'iStart', 'iClose', 'iPivotToSelected', 'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation', 'iBoundingBoxWindow' ]
+my_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBoundingBoxMesh', 'iLink', 'iWipe', 'iOrthoCam', 'iConsole', 'iNtersect', 'iPoint', 'iGeometry', 'iPivotToSelected', 'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation', 'iBoundingBoxWindow' ]
 
 is_lang = {}
 handle_lang = True
 
-it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi in Bound', 'Circoscrivi', 'Blender StackExchange', 'Pulisci Scena', 'Appendi Camera', 'Console', 'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Traccia Polilinea', 'Chiudi Polilinea', 'Pivot alla Selezione', 'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale', 'Aggiungi Finestra & Circoscrivi' ]
+it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi', 'Blender StackExchange', 'Pulisci Scena', 'Appendi Camera', 'Console', 'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Pivot alla Selezione', 'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale', 'Aggiungi Finestra & Circoscrivi' ]
 
-en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Bounds', 'Bounding Box Wire', 'Blender StackExchange', 'Wipe scene', 'Ortho Camera', 'Console', 'Intersect', 'Set Point', 'Remove Doubles & Center Origin','Start Polyline','Close Polyline', 'Pivot To Selected', 'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation', 'Add Window & Bounding Box' ]
+en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Wire', 'Blender StackExchange', 'Wipe scene', 'Ortho Camera', 'Console', 'Intersect', 'Set Point', 'Remove Doubles & Center Origin', 'Pivot To Selected', 'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation', 'Add Window & Bounding Box' ]
 
 bpy.types.Scene.nt_main_panel = BoolProperty(
     name="show main panel",
@@ -92,101 +92,12 @@ vert_max = 0
 isar_lang_panel()
 
 class iLanguage (bpy.types.Operator):
-    """Language Switcher to the most widely spoken Abruzzese dialect"""
+    """Language Switcher"""
     bl_idname = "object.isar_language"
     bl_label = "iSar English"
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self, context):
         isar_lang_panel()
-        return {'FINISHED'}
-
-# Bounding Box Wire
-def add_box(width, height, depth):
-    verts = [(+1.0, +1.0, -1.0),
-             (+1.0, -1.0, -1.0),
-             (-1.0, -1.0, -1.0),
-             (-1.0, +1.0, -1.0),
-             (+1.0, +1.0, +1.0),
-             (+1.0, -1.0, +1.0),
-             (-1.0, -1.0, +1.0),
-             (-1.0, +1.0, +1.0)]
-
-    faces = [(0, 1, 2, 3),
-             (4, 7, 6, 5),
-             (0, 4, 5, 1),
-             (1, 5, 6, 2),
-             (2, 6, 7, 3),
-             (4, 0, 3, 7)]
-    # Apply size
-    for i, v in enumerate(verts):
-        verts[i] = v[0] * width, v[1] * depth, v[2] * height
-
-    return verts, faces
-
-class iBounds(bpy.types.Operator):
-    """Bounding Box Bound"""
-    bl_idname = "object.isar_bounds"
-    bl_label = "iSar Bounding Box Bounds"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    # Generic transform props
-    view_align = BoolProperty(
-            name="Align to View",
-            default=False)
-    location = FloatVectorProperty(
-            name="Location",
-            subtype='TRANSLATION')
-    rotation = FloatVectorProperty(
-            name="Rotation",
-            subtype='EULER')
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.selected_objects) == 0:
-            return False
-        return True
-
-    def execute(self, context):
-        minx, miny, minz = (999999.0,)*3
-        maxx, maxy, maxz = (-999999.0,)*3
-        for obj in context.selected_objects:
-            for v in obj.bound_box:
-                v_world = obj.matrix_world * mathutils.Vector((v[0],v[1],v[2]))
-
-                if v_world[0] < minx:
-                    minx = v_world[0]
-                if v_world[0] > maxx:
-                    maxx = v_world[0]
-
-                if v_world[1] < miny:
-                    miny = v_world[1]
-                if v_world[1] > maxy:
-                    maxy = v_world[1]
-
-                if v_world[2] < minz:
-                    minz = v_world[2]
-                if v_world[2] > maxz:
-                    maxz = v_world[2]
-
-        verts_loc, faces = add_box((maxx-minx)/2, (maxz-minz)/2, (maxy-miny)/2)
-        mesh = bpy.data.meshes.new("BoundingBox")
-        bm = bmesh.new()
-        for v_co in verts_loc:
-            bm.verts.new(v_co)
-
-        for f_idx in faces:
-            bm.faces.new([bm.verts[i] for i in f_idx])
-
-        bm.to_mesh(mesh)
-        mesh.update()
-        self.location[0] = minx+((maxx-minx)/2)
-        self.location[1] = miny+((maxy-miny)/2)
-        self.location[2] = minz+((maxz-minz)/2)
-        bbox = object_utils.object_data_add(context, mesh, operator=self)
-        # does a bounding box need to display more than the bounds??
-        bbox.object.draw_type = 'BOUNDS'
-        bbox.object.hide_render = True
-
         return {'FINISHED'}
 
 # Bounding Box Mesh
@@ -544,65 +455,6 @@ class iGeometry(bpy.types.Operator):
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
         return {'FINISHED'}
 
-class iStart(bpy.types.Operator):
-    """Start Polyline"""
-    bl_idname = "object.is_start"
-    bl_label = "iSar Start"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # Deselect everything to prevent Origin to Geometry of more objects
-        bpy.ops.object.select_all(action='DESELECT')
-        # Get Cursor location
-        location = bpy.context.scene.cursor_location
-        verts = [location]
-        name = 'Point'
-        # Create mesh and object
-        me = bpy.data.meshes.new(name+'Mesh')
-        ob = bpy.data.objects.new(name, me)
-        ob.show_name = False
-        # Link object to scene
-        scn = bpy.context.scene
-        scn.objects.link(ob)
-        # Make object active
-        scn.objects.active = ob
-        ob.select = True
-        # Fill in the data
-        me.from_pydata(verts, [], [])
-        # Update mesh with new data
-        me.update()
-        # Get first item coordinates
-        coordinates = me.vertices[0].co
-        print('Vertex: '+str(coordinates))
-        # Origin to Geometry of current object
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-        # Toggle in Edit Mode and active the Vertex Select Mode
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(type="VERT")
-
-        self.report({'INFO'}, self.info())
-
-        return {'FINISHED'}
-
-    def info(self):
-        snippet = 'Press the button "'+is_lang['iClose']+'" to exit the operator.\nPress the key "E" to Extrude the vertex as many times as you need.'
-        return snippet
-
-class iClose(bpy.types.Operator):
-    """Origin to Geometry & Remove Doubles"""
-    bl_idname = "object.is_close"
-    bl_label = "iSar Close"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # Remove Doubles
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.remove_doubles(threshold=0.0001, use_unselected=False)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        # Origin to Geometry
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-        return {'FINISHED'}
-
 class iPivotToSelected(bpy.types.Operator):
     """Cursor To Selected & Pivot To Cursor"""
     bl_idname = "object.isar_origin_to_cursor"
@@ -750,9 +602,6 @@ class iSarPanel(bpy.types.Panel):
         col.operator("object.isar_clean", icon="WORLD", text=is_lang['iWipe'])
         row = col.row(align=True)
         row.operator("object.isar_ortho_cam", icon="OUTLINER_OB_CAMERA", text=is_lang['iOrthoCam'])
-        #row = col.row(align=True)
-        #row.operator('object.is_start', icon="OUTLINER_OB_CURVE", text=is_lang['iStart'])
-        #row.operator('object.is_close', icon="OUTLINER_OB_MESH", text=is_lang['iClose'])
 
         # Multiple rows & columns
         col = layout.column(align=True)
@@ -760,23 +609,23 @@ class iSarPanel(bpy.types.Panel):
         row = col.row(align=True)
         row.operator('object.isar_origin_geometry', icon="MESH_DATA", text=is_lang['iGeometry'])
         row = col.row(align=True)
-        #row.operator("object.isar_bounds", icon="BBOX", text=is_lang['iBounds'])
         row.operator("object.isar_bounding_boxers", icon="MESH_CUBE", text=is_lang['iBoundingBoxMesh'])
         row.operator('object.isar_hole', icon="MOD_BOOLEAN", text=is_lang['iHole'])
         row = col.row(align=True)
+        row.operator("object.isar_window_bounding_boxers", icon="MOD_LATTICE", text=is_lang['iBoundingBoxWindow'])
+
+
+
+        col = layout.column(align=True)
+        col.operator('object.isar_create_orientation', icon="MANIPUL", text=is_lang['iCreateOrientation'])
+        row = col.row(align=True)
         row.operator("object.isar_origin_to_cursor", icon="CURSOR", text=is_lang['iPivotToSelected'])
         row.operator("object.isar_selection_to_cursor", icon="ARROW_LEFTRIGHT", text=is_lang['iSelectionToCursor'])
-        row = col.row(align=True)
-        row.operator('object.isar_create_orientation', icon="MANIPUL", text=is_lang['iCreateOrientation'])
 
         # Simple row
         row = layout.row(align=True)
         row.operator("object.isar_separate", icon="MOD_SOLIDIFY", text=is_lang['iSeparate'])
         row.operator("object.isar_intersect", icon="MOD_BEVEL", text=is_lang['iNtersect'])
-        row = layout.row(align=True)
-        row.operator("object.isar_window_bounding_boxers", icon="MOD_LATTICE", text=is_lang['iBoundingBoxWindow'])
-
-
 
         split = layout.split()
         col = split.column(align=False)
@@ -788,9 +637,7 @@ class iSarPanel(bpy.types.Panel):
         col.operator('wm.url_open', icon="LINK", text=is_lang['iLink']).url = 'http://blender.stackexchange.com/'
 
 
-
-
-my_classes = [ iSarPanel, iLanguage, iBounds, iBoundingBoxMesh, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iStart, iClose, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow ]
+my_classes = [ iSarPanel, iLanguage, iBoundingBoxMesh, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow ]
 
 def register():
     global handle_lang

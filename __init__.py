@@ -32,6 +32,7 @@ import bpy
 import bmesh
 import math
 import mathutils
+import addon_utils
 from bpy_extras import object_utils
 from bpy.props import BoolProperty, FloatVectorProperty
 
@@ -52,14 +53,25 @@ isar_ascii_logo = '''\
      ##############        #####     ###
 '''
 
-my_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBoundingBoxMesh', 'iLink', 'iWipe', 'iOrthoCam', 'iConsole', 'iNtersect', 'iPoint', 'iGeometry', 'iPivotToSelected', 'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation', 'iBoundingBoxWindow' ]
-
-is_lang = {}
+isar_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBoundingBox',
+                     'iLink', 'iWipe', 'iOrthoCam', 'iConsole',
+                     'iNtersect', 'iPoint', 'iGeometry', 'iPivotToSelected',
+                     'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation',
+                     'iBoundingBoxWindow' ]
+isar_lang = {}
 handle_lang = True
 
-it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi', 'Blender StackExchange', 'Pulisci Scena', 'Appendi Camera', 'Console', 'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Pivot alla Selezione', 'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale', 'Aggiungi Finestra & Circoscrivi' ]
+it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi',
+            'Blender StackExchange', 'Pulisci Scena', 'Appendi Camera', 'Console',
+            'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Pivot alla Selezione',
+            'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale',
+            'Aggiungi Finestra & Circoscrivi' ]
 
-en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Wire', 'Blender StackExchange', 'Wipe scene', 'Ortho Camera', 'Console', 'Intersect', 'Set Point', 'Remove Doubles & Center Origin', 'Pivot To Selected', 'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation', 'Add Window & Bounding Box' ]
+en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Wire',
+            'Blender StackExchange', 'Wipe scene', 'Ortho Camera', 'Console',
+            'Intersect', 'Set Point', 'Remove Doubles & Center Origin', 'Pivot To Selected',
+            'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation',
+            'Add Window & Bounding Box' ]
 
 bpy.types.Scene.nt_main_panel = BoolProperty(
     name="show main panel",
@@ -78,17 +90,16 @@ def get_lang(lang_dict):
 
 def isar_lang_panel():
     global handle_lang
-    global is_lang
+    global isar_lang
     if handle_lang:
-        is_lang = get_lang(lang_dict_it)
+        isar_lang = get_lang(lang_dict_it)
         handle_lang = False
     else:
-        is_lang = get_lang(lang_dict_en)
+        isar_lang = get_lang(lang_dict_en)
         handle_lang = True
 
-lang_dict_it = isar_make_lang(my_str_classes, it_dict)
-lang_dict_en = isar_make_lang(my_str_classes, en_dict)
-vert_max = 0
+lang_dict_it = isar_make_lang(isar_str_classes, it_dict)
+lang_dict_en = isar_make_lang(isar_str_classes, en_dict)
 isar_lang_panel()
 
 class iLanguage (bpy.types.Operator):
@@ -98,10 +109,11 @@ class iLanguage (bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     def execute(self, context):
         isar_lang_panel()
+
         return {'FINISHED'}
 
 # Bounding Box Mesh
-class iBoundingBoxMesh (bpy.types.Operator):
+class iBoundingBox (bpy.types.Operator):
     """Bounding Box Mesh"""
     bl_idname = "object.isar_bounding_boxers"
     bl_label = "iSar Bounding Box"
@@ -116,7 +128,7 @@ class iBoundingBoxMesh (bpy.types.Operator):
         return True
 
     def execute(self, context):
-        # Pivot To Median Point
+        '''Pivot To Median Point'''
         bpy.context.space_data.pivot_point = 'MEDIAN_POINT'
         # Bound object
         objects = bpy.context.selected_objects
@@ -137,8 +149,8 @@ class iBoundingBoxMesh (bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
             minuendo.select = True
             sottraendo.select = True
-            # Drop child object [10]
-            # [10]: http://blender.stackexchange.com/questions/26108/how-do-i-parent-objects
+            # Drop child object [0]
+            # [0]: http://blender.stackexchange.com/questions/26108/how-do-i-parent-objects
             bpy.context.scene.objects.active = minuendo
             bpy.ops.object.parent_set()
             minuendo.select = True
@@ -149,6 +161,7 @@ class iBoundingBoxMesh (bpy.types.Operator):
         # Tip to scale the bounding box
         tip = 'You can constrain movement to the local axis by pressing twice either Shift Y or Ctrl Y.'
         self.report({'INFO'}, tip)
+
         return {'FINISHED'}
 
     # TODO rename minuendo and sottraendo
@@ -209,7 +222,6 @@ class iBoundingBoxMesh (bpy.types.Operator):
         self.obName = bpy.context.selected_objects[i].name + '_bounding_box'
         return
 
-
 class iBoundingBoxWindow (bpy.types.Operator):
     """Add Window & Bounding Box Mesh"""
     bl_idname = "object.isar_window_bounding_boxers"
@@ -217,10 +229,27 @@ class iBoundingBoxWindow (bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        # Check enabled addon [10]
+        # [10]: http://blender.stackexchange.com/questions/15638/how-to-distinguish-between-addon-is-not-installed-and-addon-is-not-enabled
+        mod = None
+        addon_name = "add_window"
+        if addon_name not in addon_utils.addons_fake_modules:
+            print("\"%s\" addon is not installed." % addon_name)
+            addon_status = "\"%s\" addon is not installed. This method require Window Generator 3!" % addon_name
+            self.report({'INFO'}, addon_status)
+        else:
+            default, state = addon_utils.check(addon_name)
+            if not state:
+                try:
+                    mod = addon_utils.enable(addon_name, default_set=False, persistent=False)
+                except:
+                    print("Could not enable \"%s\" addon on the fly." % addon_name )
+        if mod:
+            addon_status = 'Window Generator 3 enabled and running!'
+            self.report({'INFO'}, addon_status)
+
         '''Bounding Box Mesh Wire Window'''
-
         if len(context.selected_objects) > 0:
-
             selected_objects = bpy.context.selected_objects # List
             active_object = bpy.context.active_object       # Item
             for selected_object in selected_objects:
@@ -231,8 +260,8 @@ class iBoundingBoxWindow (bpy.types.Operator):
                 object = bpy.context.object
                 if object.mode == 'EDIT':
                     bpy.ops.view3d.snap_cursor_to_selected()
-                    # List vertices coordinates from edge [8]
-                    # [8]: http://blender.stackexchange.com/questions/27582/how-to-list-vertices-coordinates-from-edge/27583#27583
+                    # List vertices coordinates from edge [5]
+                    # [5]: http://blender.stackexchange.com/questions/27582/how-to-list-vertices-coordinates-from-edge/27583#27583
                     bpy.ops.object.mode_set(mode = 'OBJECT')
                     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
                     verts_indices = [i.index for i in object.data.vertices if i.select]
@@ -246,13 +275,11 @@ class iBoundingBoxWindow (bpy.types.Operator):
                         list_v.append(world_co)
                     print(list_v)
                     bpy.ops.object.mode_set(mode = 'EDIT')
-
                     x = max( abs(list_v[0][0]), abs(list_v[1][0]) ) - min( abs(list_v[0][0]), abs(list_v[1][0]) )
                     y = max( abs(list_v[0][1]), abs(list_v[1][1]) ) - min ( abs(list_v[0][1]), abs(list_v[1][1]) )
+                    # TODO Cross quadrant intersection
                     if y > x:
                         division = x/y
-                        # TODO Try to use abs() if something goes wrong
-                        # TODO Cross quadrant intersection
                         if list_v[0][0] > list_v[1][0] and list_v[0][1] > list_v[1][1]:
                             angle = -math.atan(division) + math.radians(90)
                             print('y > x | a | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
@@ -292,11 +319,9 @@ class iBoundingBoxWindow (bpy.types.Operator):
                     bpy.ops.window.run_action()
                     # Add Window Bounding Box
                     bpy.ops.object.isar_bounding_boxers()
-                    # Rotete Window
+                    # Rotate Window
                     bpy.ops.transform.rotate(value=angle, constraint_axis=(False, False, True))
-
                     bpy.context.scene.tool_settings.snap_target = 'CENTER'
-
                 else:
                     bpy.ops.object.editmode_toggle()
                     cd = active_object.data
@@ -310,17 +335,17 @@ class iBoundingBoxWindow (bpy.types.Operator):
                     bpy.ops.object.isar_bounding_boxers()
         else:
             bpy.ops.window.run_action()
+
         return {'FINISHED'}
 
 class iWipe(bpy.types.Operator):
     """Wipe Scene & Centre Cursor"""
-    bl_idname = "object.isar_clean"
+    bl_idname = "object.isar_wipe"
     bl_label = "Wipe Scene & Centre Cursor"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-
-        # Delete MESH, CAMERA and LAMP in the context
+        '''Delete MESH, CAMERA and LAMP in the context'''
         scene = bpy.context.scene
         for ob in scene.objects:
             if ob.type == 'MESH' or ob.type == 'CAMERA' or ob.type == 'LAMP':
@@ -328,18 +353,18 @@ class iWipe(bpy.types.Operator):
             else: 
                 ob.select = False
         bpy.ops.object.delete()
-
-        # Snap cursor to center or to specific location. If this run from TEXT_EDITOR the context need to Go in VIEW_3D and get back to TEXT_EDITOR
+        # Snap cursor to center or to specific location.
         bpy.ops.object.empty_add(type='PLAIN_AXES', radius=1, view_align=False, location=(0, 0, 0))
         #bpy.context.area.type = 'VIEW_3D'
         bpy.ops.view3d.snap_cursor_to_selected()
+        # If this run from the Text Editor the context need to Go in VIEW_3D and get back to TEXT_EDITOR
         bpy.ops.object.delete(use_global=False)
         #bpy.context.area.type = 'TEXT_EDITOR'
 
         return {'FINISHED'}
 
-# Reset 3D View [5]
-# [5]: http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/3D_interaction/Reset_3D_View
+# Reset 3D View [6]
+# [6]: http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/3D_interaction/Reset_3D_View
 class iOrthoCam(bpy.types.Operator):
     """Ortho Camera"""
     bl_idname = "object.isar_ortho_cam"
@@ -424,6 +449,7 @@ class iPoint(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_mode(type="VERT")
         bpy.ops.object.mode_set(mode='OBJECT')
+
         return {'FINISHED'}
 
 class iGeometry(bpy.types.Operator):
@@ -439,8 +465,8 @@ class iGeometry(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        # Remove Doubles [6]
-        # [6]: http://bit.ly/1C0e79C
+        # Remove Doubles [7]
+        # [7]: http://bit.ly/1C0e79C
         #obj = bpy.data.objects
         #for ob in obj:
             #if ob.type == 'MESH':
@@ -453,6 +479,7 @@ class iGeometry(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         # Origin to Geometry
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+
         return {'FINISHED'}
 
 class iPivotToSelected(bpy.types.Operator):
@@ -472,6 +499,7 @@ class iPivotToSelected(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         #bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
         bpy.context.space_data.pivot_point = 'CURSOR'
+
         return {'FINISHED'}
 
 class iSelectionToCursor(bpy.types.Operator):
@@ -488,6 +516,7 @@ class iSelectionToCursor(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+
         return {'FINISHED'}
 
 class iSeparate(bpy.types.Operator):
@@ -512,6 +541,7 @@ class iSeparate(bpy.types.Operator):
         bpy.ops.mesh.separate(type='LOOSE')
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+
         return {'FINISHED'}
 
 class iHole(bpy.types.Operator):
@@ -527,11 +557,10 @@ class iHole(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        # Boolean Modifiers [7]
-        # [7]: http://bit.ly/1DO4y2l
+        # Boolean Modifiers [8]
+        # [8]: http://bit.ly/1DO4y2l
         bpy.ops.object.mode_set(mode='OBJECT')
         obj_A = bpy.context.scene.objects.active
-
         # List objects already used in the modifier of the obj_A
         objs_modifiers = []
         for modifier in obj_A.modifiers:
@@ -546,11 +575,10 @@ class iHole(bpy.types.Operator):
                 objs.append(ob.name)
                 # Hide Bounding Box
                 #ob.hide = True
-
         for ob in objs:
             obj_B = bpy.context.scene.objects.get(ob)
-            # Object Modifiers [8]
-            # [8]: http://www.blender.org/api/blender_python_api_2_57_release/bpy.types.ObjectModifiers.html#bpy.types.ObjectModifiers.new
+            # Object Modifiers [9]
+            # [9]: http://www.blender.org/api/blender_python_api_2_57_release/bpy.types.ObjectModifiers.html#bpy.types.ObjectModifiers.new
             boo = obj_A.modifiers.new('isar_boolean', 'BOOLEAN')
             boo.object = obj_B
             boo.operation = 'DIFFERENCE'
@@ -576,6 +604,7 @@ class iCreateOrientation(bpy.types.Operator):
         bpy.context.space_data.transform_orientation = 'NORMAL'
         bpy.ops.transform.create_orientation(name="Normal Ridge", use_view=False, use=True, overwrite=True)
         bpy.ops.mesh.select_mode(type="VERT")
+
         return {'FINISHED'}
 
 class iSarPanel(bpy.types.Panel):
@@ -587,69 +616,72 @@ class iSarPanel(bpy.types.Panel):
     bl_category = 'Tools'
     bl_options = {'DEFAULT_CLOSED'}
     def draw(self, context):
-        global maxim
-        global is_lang
-
+        global isar_lang
         layout = self.layout
-
-        # Label row
         row = layout.row()
-        row.label(text=is_lang['iSwitchLanguage'])
-        row.operator('object.isar_language', text=is_lang['iLanguage'])
-
-        # Multiple rows & columns
+        row.label(text=isar_lang['iSwitchLanguage'])
+        row.operator('object.isar_language', text=isar_lang['iLanguage'])
         col = layout.column(align=True)
-        col.operator("object.isar_clean", icon="WORLD", text=is_lang['iWipe'])
+        col.operator("object.isar_wipe", icon="WORLD", text=isar_lang['iWipe'])
         row = col.row(align=True)
-        row.operator("object.isar_ortho_cam", icon="OUTLINER_OB_CAMERA", text=is_lang['iOrthoCam'])
-
-        # Multiple rows & columns
+        row.operator("object.isar_ortho_cam", icon="OUTLINER_OB_CAMERA", text=isar_lang['iOrthoCam'])
         col = layout.column(align=True)
-        col.operator('object.isar_point', icon="LAYER_USED", text=is_lang['iPoint'])
+        col.operator('object.isar_point', icon="LAYER_USED", text=isar_lang['iPoint'])
         row = col.row(align=True)
-        row.operator('object.isar_origin_geometry', icon="MESH_DATA", text=is_lang['iGeometry'])
+        row.operator('object.isar_origin_geometry', icon="MESH_DATA", text=isar_lang['iGeometry'])
         row = col.row(align=True)
-        row.operator("object.isar_bounding_boxers", icon="MESH_CUBE", text=is_lang['iBoundingBoxMesh'])
-        row.operator('object.isar_hole', icon="MOD_BOOLEAN", text=is_lang['iHole'])
+        row.operator("object.isar_bounding_boxers", icon="MESH_CUBE", text=isar_lang['iBoundingBox'])
+        row.operator('object.isar_hole', icon="MOD_BOOLEAN", text=isar_lang['iHole'])
         row = col.row(align=True)
-        row.operator("object.isar_window_bounding_boxers", icon="MOD_LATTICE", text=is_lang['iBoundingBoxWindow'])
-
-
-
+        row.operator("object.isar_window_bounding_boxers", icon="MOD_LATTICE", text=isar_lang['iBoundingBoxWindow'])
         col = layout.column(align=True)
-        col.operator('object.isar_create_orientation', icon="MANIPUL", text=is_lang['iCreateOrientation'])
+        col.operator('object.isar_create_orientation', icon="MANIPUL", text=isar_lang['iCreateOrientation'])
         row = col.row(align=True)
-        row.operator("object.isar_origin_to_cursor", icon="CURSOR", text=is_lang['iPivotToSelected'])
-        row.operator("object.isar_selection_to_cursor", icon="ARROW_LEFTRIGHT", text=is_lang['iSelectionToCursor'])
-
-        # Simple row
+        row.operator("object.isar_origin_to_cursor", icon="CURSOR", text=isar_lang['iPivotToSelected'])
+        row.operator("object.isar_selection_to_cursor", icon="ARROW_LEFTRIGHT", text=isar_lang['iSelectionToCursor'])
         row = layout.row(align=True)
-        row.operator("object.isar_separate", icon="MOD_SOLIDIFY", text=is_lang['iSeparate'])
-        row.operator("object.isar_intersect", icon="MOD_BEVEL", text=is_lang['iNtersect'])
-
+        row.operator("object.isar_separate", icon="MOD_SOLIDIFY", text=isar_lang['iSeparate'])
+        row.operator("object.isar_intersect", icon="MOD_BEVEL", text=isar_lang['iNtersect'])
         split = layout.split()
         col = split.column(align=False)
-        col.operator("view.isar_console", icon="CONSOLE", text=is_lang['iConsole'])
-
-        # Simple column
+        col.operator("view.isar_console", icon="CONSOLE", text=isar_lang['iConsole'])
         split = layout.split()
         col = split.column(align=True)
-        col.operator('wm.url_open', icon="LINK", text=is_lang['iLink']).url = 'http://blender.stackexchange.com/'
+        col.operator('wm.url_open', icon="LINK", text=isar_lang['iLink']).url = 'http://blender.stackexchange.com/'
 
-
-my_classes = [ iSarPanel, iLanguage, iBoundingBoxMesh, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow ]
+isar_classes = [ iSarPanel, iLanguage, iBoundingBox, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow ]
 
 def register():
     global handle_lang
-    for my_class in my_classes:
-        bpy.utils.register_class(my_class)
+    for isar_class in isar_classes:
+        bpy.utils.register_class(isar_class)
     print(isar_ascii_logo)
 
 def unregister():
-    reversed_classes = reversed(my_classes)
-    for my_class in reversed_classes:
-        bpy.utils.unregister_class(my_class)
+    reversed_classes = reversed(isar_classes)
+    for isar_class in reversed_classes:
+        bpy.utils.unregister_class(isar_class)
     del reversed_classes
 
 if __name__ == "__main__":
     register()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

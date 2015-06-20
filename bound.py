@@ -21,7 +21,7 @@ class iBoundingBox (bpy.types.Operator):
         return True
 
     def execute(self, context):
-        '''Pivot To Median Point'''
+        # Pivot To Median Point
         bpy.context.space_data.pivot_point = 'MEDIAN_POINT'
         # Bound object
         objects = bpy.context.selected_objects
@@ -30,24 +30,24 @@ class iBoundingBox (bpy.types.Operator):
         for object in objects:
             self.bounding(i, object)
             i += 1
-            # Make objects orientation Local so we can work easier with inclined walls
+            # Make objects orientation Local so we can work easier with not orthogonal walls
             bpy.context.space_data.transform_orientation = 'LOCAL'
 
         # Drop child object in outliner
         for object in objects:
             parent_name = object.name
             child_name = object.name + '_bounding_box'
-            minuendo = bpy.data.objects[parent_name]
-            sottraendo = bpy.data.objects[child_name]
+            object_parent_name = bpy.data.objects[parent_name]
+            object_child_name = bpy.data.objects[child_name]
             bpy.ops.object.select_all(action='DESELECT')
-            minuendo.select = True
-            sottraendo.select = True
-            # Drop child object [0]
-            # [0]: http://blender.stackexchange.com/questions/26108/how-do-i-parent-objects
-            bpy.context.scene.objects.active = minuendo
+            object_parent_name.select = True
+            object_child_name.select = True
+            # Drop child object [1]
+            # [1]: http://blender.stackexchange.com/questions/26108/how-do-i-parent-objects
+            bpy.context.scene.objects.active = object_parent_name
             bpy.ops.object.parent_set()
-            minuendo.select = True
-            sottraendo.select = False
+            object_parent_name.select = True
+            object_child_name.select = False
 
         # Snap to closest point to place the window
         bpy.context.scene.tool_settings.snap_target = 'CLOSEST'
@@ -72,20 +72,20 @@ class iBoundingBox (bpy.types.Operator):
                     bpy.ops.object.delete()
             list_parent_names.append(parent_name)
         for parent_name in list_parent_names:
-            minuendo = bpy.data.objects[parent_name]
-            minuendo.select = True
+            object_parent_name = bpy.data.objects[parent_name]
+            object_parent_name.select = True
 
     def bounding(self, i, obj):
-        # Bound Box [1]
-        # [1]: http://www.blender.org/api/blender_python_api_2_71_release/bpy.types.Object.html#bpy.types.Object.bound_box
+        # Bound Box [2]
+        # [2]: http://www.blender.org/api/blender_python_api_2_71_release/bpy.types.Object.html#bpy.types.Object.bound_box
         box = bpy.context.selected_objects[i].bound_box
-        # Matrix World [2]
-        # [2]: http://www.blender.org/api/blender_python_api_2_71_release/bpy.types.Object.html#bpy.types.Object.matrix_world
+        # Matrix World [3]
+        # [3]: http://www.blender.org/api/blender_python_api_2_71_release/bpy.types.Object.html#bpy.types.Object.matrix_world
         mw = bpy.context.selected_objects[i].matrix_world
         obName = (bpy.context.selected_objects[i].name + '_bounding_box')
         me = bpy.data.meshes.new(obName + '_mesh')
-        # Three ways to create objects [3]
-        # [3]: http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Cookbook/Code_snippets/Three_ways_to_create_objects
+        # Three ways to create objects [4]
+        # [4]: http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Cookbook/Code_snippets/Three_ways_to_create_objects
         ob = bpy.data.objects.new(obName, me)
         ob.location = mw.translation
         ob.scale = mw.to_scale()
@@ -122,8 +122,8 @@ class iBoundingBoxWindow (bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Check enabled addon [10]
-        # [10]: http://blender.stackexchange.com/questions/15638/how-to-distinguish-between-addon-is-not-installed-and-addon-is-not-enabled
+        # Check enabled addon [5]
+        # [5]: http://blender.stackexchange.com/questions/15638/how-to-distinguish-between-addon-is-not-installed-and-addon-is-not-enabled
         mod = None
         addon_name = "add_window"
         if addon_name not in addon_utils.addons_fake_modules:
@@ -153,8 +153,8 @@ class iBoundingBoxWindow (bpy.types.Operator):
                 object = bpy.context.object
                 if object.mode == 'EDIT':
                     bpy.ops.view3d.snap_cursor_to_selected()
-                    # List vertices coordinates from edge [5]
-                    # [5]: http://blender.stackexchange.com/questions/27582/how-to-list-vertices-coordinates-from-edge/27583#27583
+                    # List vertices coordinates from edge [6]
+                    # [6]: http://blender.stackexchange.com/questions/27582/how-to-list-vertices-coordinates-from-edge/27583#27583
                     bpy.ops.object.mode_set(mode = 'OBJECT')
                     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
                     verts_indices = [i.index for i in object.data.vertices if i.select]
@@ -162,50 +162,22 @@ class iBoundingBoxWindow (bpy.types.Operator):
                     list_v = []
                     for i in verts_indices:
                         local_co = object.data.vertices[i].co
-                        print('local_co = object.data.vertices[i].co = '+str(local_co)+('\n'))
+                        print('local_co: '+str(local_co)+('\n'))
                         world_co = object.matrix_world * local_co
-                        print('world_co = object.matrix_world * local_co = '+str(world_co)+('\n'))
+                        print('local_co: '+str(world_co)+('\n'))
                         list_v.append(world_co)
                     print(list_v)
                     bpy.ops.object.mode_set(mode = 'EDIT')
-                    x = max( abs(list_v[0][0]), abs(list_v[1][0]) ) - min( abs(list_v[0][0]), abs(list_v[1][0]) )
-                    y = max( abs(list_v[0][1]), abs(list_v[1][1]) ) - min ( abs(list_v[0][1]), abs(list_v[1][1]) )
-                    # TODO Cross quadrant intersection
-                    if y > x:
-                        division = x/y
-                        if list_v[0][0] > list_v[1][0] and list_v[0][1] > list_v[1][1]:
-                            angle = -math.atan(division) + math.radians(90)
-                            print('y > x | a | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] < list_v[1][0] and list_v[0][1] > list_v[1][1]:
-                            angle = math.atan(division) + math.radians(90)
-                            print('y > x | b | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] > list_v[1][0] and list_v[0][1] < list_v[1][1]:
-                            angle = -math.acos(division)
-                            print('y > x | c | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] < list_v[1][0] and list_v[0][1] < list_v[1][1]:
-                            angle = -math.atan(division) + math.radians(90)
-                            print('y > x | d | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        else:
-                            angle = -math.asin(division)
-                            print('y > x | e | '+ str(x) +' / '+ str(y) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                    elif y <= x:
-                        division = y/x
-                        if list_v[0][0] > list_v[1][0] and list_v[0][1] > list_v[1][1]:
-                            angle = math.atan(division)
-                            print('y <= x | a | '+ str(y) +' / '+ str(x) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] > list_v[1][0] and list_v[0][1] < list_v[1][1]:
-                            angle = -math.atan(division)
-                            print('y <= x | b | '+ str(y) +' / '+ str(x) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] < list_v[1][0] and list_v[0][1] > list_v[1][1]:
-                            angle = -math.atan(division)
-                            print('y <= x | c | '+ str(y) +' / '+ str(x) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        elif list_v[0][0] < list_v[1][0] and list_v[0][1] < list_v[1][1]:
-                            angle = math.atan(division)
-                            print('y <= x | d | '+ str(y) +' / '+ str(x) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-                        else:
-                            angle = -math.asin(division)
-                            print('y <= x | e '+ str(y) +' / '+ str(x) +' = '+ str(division) +' | '+ str(math.degrees(angle)))
-
+                    # Get the angle of an edge [8]
+                    # [7]: http://www.blender.org/api/blender_python_api_2_62_2/mathutils.html#mathutils.Vector.angle
+                    # [8]: http://blender.stackexchange.com/questions/32606/get-the-angle-of-an-edge/32611#32611
+                    v0 = list_v[0]
+                    v1 = list_v[1]
+                    track = v0 - v1                         # Vector
+                    theta = math.atan2(track[1], track[0])  # Float
+                    # Angle in degrees
+                    print('theta: '+str(math.degrees(theta)))
+                    # Toggle mode
                     bpy.ops.object.editmode_toggle()
                     # Insert Window
                     bpy.ops.object.select_all(action='TOGGLE')
@@ -213,7 +185,7 @@ class iBoundingBoxWindow (bpy.types.Operator):
                     # Add Window Bounding Box
                     bpy.ops.object.isar_bounding_boxers()
                     # Rotate Window
-                    bpy.ops.transform.rotate(value=angle, constraint_axis=(False, False, True))
+                    bpy.ops.transform.rotate(value=theta, constraint_axis=(False, False, True))
                     bpy.context.scene.tool_settings.snap_target = 'CENTER'
                 else:
                     bpy.ops.object.editmode_toggle()

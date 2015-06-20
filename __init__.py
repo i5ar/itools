@@ -105,7 +105,7 @@ class iLine (bpy.types.Operator):
         # Check enabled addon [10]
         # [10]: http://blender.stackexchange.com/questions/15638/how-to-distinguish-between-addon-is-not-installed-and-addon-is-not-enabled
         mod = None
-        addon_name = "snap_utilities_lite"                      # File name without extension or folder name
+        addon_name = "mesh_snap_utilities_line"                      # File name without extension or folder name
         if addon_name not in addon_utils.addons_fake_modules:   # Addons in directory
             print("\"%s\" addon is not installed." % addon_name)
             addon_status = "\"%s\" addon is not installed. This method require " % addon_name
@@ -123,7 +123,7 @@ class iLine (bpy.types.Operator):
             addon_status = 'Addon enabled and running!'
             self.report({'INFO'}, addon_status)
 
-        # TODO Hack the line
+        # TODO Move line here
         self.report({'INFO'}, "Work in progress!")
 
         return {'FINISHED'}

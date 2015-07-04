@@ -40,7 +40,7 @@ class iPivotToSelected(bpy.types.Operator):
         return {'FINISHED'}
 
 class iSelectionToCursor(bpy.types.Operator):
-    """Origin To Cursor"""
+    """Snap Selection To Cursor"""
     bl_idname = "object.isar_selection_to_cursor"
     bl_label = "iSar Origin To 3D Cursor"
     bl_options = {'REGISTER', 'UNDO'}

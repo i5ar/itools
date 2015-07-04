@@ -25,22 +25,41 @@ bl_info = {
     "description": "architecture workflow",
     "warning": "",
     "wiki_url": "",
-    "tracker_url": "https://github.com/i5ar/isar_tools/",
+    "tracker_url": "https://github.com/i5ar/itools/",
     "category": "Object"}
 
 import bpy
 import addon_utils
 from bpy.props import BoolProperty, FloatVectorProperty
-from .creator import iOrthoCam, iWipe
-from .bound import iBoundingBox, iBoundingBoxWindow
+from .creator import iOrthoCam, iWipe, iPoint, iAddon, iGeometry
+from .bound import iBoundingBox, iBoundingBoxWindow, iHole
 from .snap import iCreateOrientation, iPivotToSelected, iSelectionToCursor
 from .console import iConsole
+from .separator import iSeparate
+from .intersect import iNtersect
+
+isar_ascii_logo = '''\
+
+              ::::::::  ::::::::        :::::::::
+           :::::::::::  :::::::::::   :::::::::::
+          ::::                  :::: ::::
+          :::                    ::: :::
+          :+++:                :+++: :+:
+            :+++:            :+++:   :+:
+ +#+          +###+        +###+     +#+
+ +#+            +###+    +###+   #+  +#+
+ ###              +##+  +##+     ##+ ###
+ ###              +###  ###+     ### ###
+ +###+           +###+  +###+  +###+ ###
+   ##################    #########   ###
+     ##############        #####     ###
+'''
 
 isar_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBoundingBox',
                      'iLink', 'iOrthoCam', 'iWipe', 'iConsole',
                      'iNtersect', 'iPoint', 'iGeometry', 'iPivotToSelected',
                      'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation',
-                     'iBoundingBoxWindow', 'iLine' ]
+                     'iBoundingBoxWindow', 'iAddon' ]
 isar_lang = {}
 handle_lang = True
 
@@ -48,13 +67,13 @@ it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi',
             'Blender StackExchange', 'Appendi Camera', 'Pulisci Scena', 'Console',
             'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Pivot alla Selezione',
             'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale',
-            'Aggiungi Finestra & Circoscrivi', 'Traccia Linea' ]
+            'Aggiungi Finestra & Circoscrivi', 'Abilita Addon' ]
 
 en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Wire',
             'Blender StackExchange', 'Ortho Camera', 'Wipe scene', 'Console',
             'Intersect', 'Set Point', 'Remove Doubles & Center Origin', 'Pivot To Selected',
             'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation',
-            'Add Window & Bounding Box', 'Line' ]
+            'Add Window & Bounding Box', 'Enable Addon' ]
 
 bpy.types.Scene.nt_main_panel = BoolProperty(
     name="show main panel",
@@ -95,199 +114,6 @@ class iLanguage (bpy.types.Operator):
 
         return {'FINISHED'}
 
-class iLine (bpy.types.Operator):
-    """Add Window & Bounding Box Mesh"""
-    bl_idname = "object.isar_line"
-    bl_label = "iSar Line"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # Check enabled addon [10]
-        # [10]: http://blender.stackexchange.com/questions/15638/how-to-distinguish-between-addon-is-not-installed-and-addon-is-not-enabled
-        mod = None
-        addon_name = "mesh_snap_utilities_line"                      # File name without extension or folder name
-        if addon_name not in addon_utils.addons_fake_modules:   # Addons in directory
-            print("\"%s\" addon is not installed." % addon_name)
-            addon_status = "\"%s\" addon is not installed. This method require " % addon_name
-            self.report({'INFO'}, addon_status)
-        else:
-            default, state = addon_utils.check(addon_name)
-            if not state:
-                try:
-                    mod = addon_utils.enable(addon_name, default_set=False, persistent=False)
-                except:
-                    print("Could not enable \"%s\" addon on the fly." % addon_name )
-            if state:
-                print("Good, \"%s\" was already enabled." % addon_name )
-        if mod:
-            addon_status = 'Addon enabled and running!'
-            self.report({'INFO'}, addon_status)
-
-        # TODO Move line here
-        self.report({'INFO'}, "Work in progress!")
-
-        return {'FINISHED'}
-
-class iNtersect(bpy.types.Operator):
-    """Intersect & Split All"""
-    bl_idname = "object.isar_intersect"
-    bl_label = "iSar Intersect"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.selected_objects) == 0:
-            return False
-        return True
-
-    snippet = bpy.props.StringProperty(name='intersect', default='')
-
-    def execute(self, context):
-        self.report({'INFO'}, self.main())
-        return {'FINISHED'}
-    # TODO Surfaces intersection
-    def main(self):
-        snippet = 'Work in Progress!'
-        return snippet
-
-class iPoint(bpy.types.Operator):
-    """Set Point"""
-    bl_idname = "object.isar_point"
-    bl_label = "iSar Point"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # Deselect everything to prevent Origin to Geometry of more objects
-        bpy.ops.object.select_all(action='DESELECT')
-        # Get Cursor location
-        location = bpy.context.scene.cursor_location
-        verts = [location]
-        name = 'Point'
-        # Create mesh and object
-        me = bpy.data.meshes.new(name+'Mesh')
-        ob = bpy.data.objects.new(name, me)
-        ob.show_name = False
-        # Link object to scene
-        scn = bpy.context.scene
-        scn.objects.link(ob)
-        # Make object active
-        scn.objects.active = ob
-        ob.select = True
-        # Fill in the data
-        me.from_pydata(verts, [], [])
-        # Update mesh with new data
-        me.update()
-        # Get first item coordinates
-        coordinates = me.vertices[0].co
-        print('Vertex: '+str(coordinates))
-        # Origin to Geometry of current object
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-        # Toggle in Edit Mode and active the Vertex Select Mode
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_mode(type="VERT")
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        return {'FINISHED'}
-
-class iGeometry(bpy.types.Operator):
-    """Remove Doubles & Origin to Geometry"""
-    bl_idname = "object.isar_origin_geometry"
-    bl_label = "Remove Doubles & Origin to Geometry"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.selected_objects) == 0:
-            return False
-        return True
-
-    def execute(self, context):
-        # Remove Doubles [7]
-        # [7]: http://bit.ly/1C0e79C
-        #obj = bpy.data.objects
-        #for ob in obj:
-            #if ob.type == 'MESH':
-        #bpy.context.scene.objects.active = ob
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.remove_doubles(threshold=0.0001, use_unselected=False)
-        # Force edges
-        #bpy.ops.mesh.select_mode(type="EDGE")
-        bpy.ops.object.mode_set(mode='OBJECT')
-        # Origin to Geometry
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-
-        return {'FINISHED'}
-
-class iSeparate(bpy.types.Operator):
-    """Separate All"""
-    bl_idname = "object.isar_separate"
-    bl_label = "iSar Separate All"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.selected_objects) == 0:
-            return False
-        return True
-
-    def execute(self, context):
-        bpy.ops.object.mode_set(mode='EDIT')
-        #bpy.ops.mesh.subdivide(number_cuts=3)
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.inset(thickness=0, use_individual=True)
-        bpy.ops.mesh.delete(type='FACE')
-        bpy.ops.mesh.select_all(action='TOGGLE')
-        bpy.ops.mesh.separate(type='LOOSE')
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-
-        return {'FINISHED'}
-
-class iHole(bpy.types.Operator):
-    """Hole"""
-    bl_idname = "object.isar_hole"
-    bl_label = "iSar Hole"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.selected_objects) == 0:
-            return False
-        return True
-
-    def execute(self, context):
-        # Boolean Modifiers [8]
-        # [8]: http://bit.ly/1DO4y2l
-        bpy.ops.object.mode_set(mode='OBJECT')
-        obj_A = bpy.context.scene.objects.active
-        # List objects already used in the modifier of the obj_A
-        objs_modifiers = []
-        for modifier in obj_A.modifiers:
-            if modifier.type == "BOOLEAN":
-                # Checks if modifier has any object specified and append name
-                if modifier.object:
-                    objs_modifiers.append(modifier.object.name)
-        # List objects to use as modifiers
-        objs = []
-        for ob in bpy.context.scene.objects:
-            if ob.name.endswith("_bounding_box") and ob.name not in objs_modifiers:
-                objs.append(ob.name)
-                # Hide Bounding Box
-                #ob.hide = True
-        for ob in objs:
-            obj_B = bpy.context.scene.objects.get(ob)
-            # Object Modifiers [9]
-            # [9]: http://www.blender.org/api/blender_python_api_2_57_release/bpy.types.ObjectModifiers.html#bpy.types.ObjectModifiers.new
-            boo = obj_A.modifiers.new('isar_boolean', 'BOOLEAN')
-            boo.object = obj_B
-            boo.operation = 'DIFFERENCE'
-            # Apply modifier
-            #bpy.ops.object.modifier_apply(apply_as='DATA', modifier="isar_boolean")
-            #bpy.context.scene.objects.unlink(obj_B)
-
-        return {'FINISHED'}
-
 class iSarPanel(bpy.types.Panel):
     """iSar Panel"""
     bl_idname = "panel.isar"
@@ -306,12 +132,13 @@ class iSarPanel(bpy.types.Panel):
         col.operator("object.isar_wipe", icon="WORLD", text=isar_lang['iWipe'])
         row = col.row(align=True)
         row.operator("object.isar_ortho_cam", icon="OUTLINER_OB_CAMERA", text=isar_lang['iOrthoCam'])
-        col = layout.column(align=True)
-        col.operator('object.isar_point', icon="LAYER_USED", text=isar_lang['iPoint'])
         row = col.row(align=True)
-        row.operator("object.isar_line", icon="GREASEPENCIL", text=isar_lang['iLine'])
+        row.operator('object.isar_point', icon="LAYER_USED", text=isar_lang['iPoint'])
         row = col.row(align=True)
         row.operator('object.isar_origin_geometry', icon="MESH_DATA", text=isar_lang['iGeometry'])
+        #row = col.row(align=True)
+        #row.operator("object.isar_hack", icon="VIEWZOOM", text=isar_lang['iAddon'])
+        col = layout.column(align=True)
         row = col.row(align=True)
         row.operator("object.isar_bounding_boxers", icon="MESH_CUBE", text=isar_lang['iBoundingBox'])
         row.operator('object.isar_hole', icon="MOD_BOOLEAN", text=isar_lang['iHole'])
@@ -332,7 +159,7 @@ class iSarPanel(bpy.types.Panel):
         col = split.column(align=True)
         col.operator('wm.url_open', icon="LINK", text=isar_lang['iLink']).url = 'http://blender.stackexchange.com/'
 
-isar_classes = [ iSarPanel, iLanguage, iBoundingBox, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow, iLine ]
+isar_classes = [ iSarPanel, iLanguage, iBoundingBox, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow, iAddon ]
 
 def register():
     global handle_lang

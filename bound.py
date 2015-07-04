@@ -202,3 +202,47 @@ class iBoundingBoxWindow (bpy.types.Operator):
             bpy.ops.window.run_action()
 
         return {'FINISHED'}
+
+class iHole(bpy.types.Operator):
+    """Hole"""
+    bl_idname = "object.isar_hole"
+    bl_label = "iSar Hole"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if len(context.selected_objects) == 0:
+            return False
+        return True
+
+    def execute(self, context):
+        # Boolean Modifiers [8]
+        # [8]: http://bit.ly/1DO4y2l
+        bpy.ops.object.mode_set(mode='OBJECT')
+        obj_A = bpy.context.scene.objects.active
+        # List objects already used in the modifier of the obj_A
+        objs_modifiers = []
+        for modifier in obj_A.modifiers:
+            if modifier.type == "BOOLEAN":
+                # Checks if modifier has any object specified and append name
+                if modifier.object:
+                    objs_modifiers.append(modifier.object.name)
+        # List objects to use as modifiers
+        objs = []
+        for ob in bpy.context.scene.objects:
+            if ob.name.endswith("_bounding_box") and ob.name not in objs_modifiers:
+                objs.append(ob.name)
+                # Hide Bounding Box
+                #ob.hide = True
+        for ob in objs:
+            obj_B = bpy.context.scene.objects.get(ob)
+            # Object Modifiers [9]
+            # [9]: http://www.blender.org/api/blender_python_api_2_57_release/bpy.types.ObjectModifiers.html#bpy.types.ObjectModifiers.new
+            boo = obj_A.modifiers.new('isar_boolean', 'BOOLEAN')
+            boo.object = obj_B
+            boo.operation = 'DIFFERENCE'
+            # Apply modifier
+            #bpy.ops.object.modifier_apply(apply_as='DATA', modifier="isar_boolean")
+            #bpy.context.scene.objects.unlink(obj_B)
+
+        return {'FINISHED'}

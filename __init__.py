@@ -37,6 +37,7 @@ from .snap import iCreateOrientation, iPivotToSelected, iSelectionToCursor
 from .console import iConsole
 from .separator import iSeparate
 from .intersect import iNtersect
+from .roof import iRoof
 
 isar_ascii_logo = '''\
 
@@ -59,7 +60,7 @@ isar_str_classes = [ 'iSarPanel', 'iSwitchLanguage', 'iLanguage', 'iBoundingBox'
                      'iLink', 'iOrthoCam', 'iWipe', 'iConsole',
                      'iNtersect', 'iPoint', 'iGeometry', 'iPivotToSelected',
                      'iSeparate', 'iHole', 'iSelectionToCursor', 'iCreateOrientation',
-                     'iBoundingBoxWindow', 'iAddon' ]
+                     'iBoundingBoxWindow', 'iAddon', 'iRoof' ]
 isar_lang = {}
 handle_lang = True
 
@@ -67,13 +68,13 @@ it_dict = [ 'Strumenti', 'Cambia Lingua:', 'Inglese', 'Circoscrivi',
             'Blender StackExchange', 'Appendi Camera', 'Pulisci Scena', 'Console',
             'Intersezione', 'Inserisci Punto', 'Elimina Doppioni & Centra Origine', 'Pivot alla Selezione',
             'Separa Tutto', 'Sottrai', 'Selezione al Cursore', 'Crea Orientazione alla Normale',
-            'Aggiungi Finestra & Circoscrivi', 'Abilita Addon' ]
+            'Aggiungi Finestra & Circoscrivi', 'Abilita Addon', 'Tegole da Superficie WIP' ]
 
 en_dict = [ 'Toolset', 'Switch Language:', 'Italiano', 'Bounding Box Wire',
             'Blender StackExchange', 'Ortho Camera', 'Wipe scene', 'Console',
             'Intersect', 'Set Point', 'Remove Doubles & Center Origin', 'Pivot To Selected',
             'Separate All', 'Hole', 'Selection To Cursor', 'Create Normal Orientation',
-            'Add Window & Bounding Box', 'Enable Addon' ]
+            'Add Window & Bounding Box', 'Enable Addon', 'Roof Tile WIP' ]
 
 bpy.types.Scene.nt_main_panel = BoolProperty(
     name="show main panel",
@@ -144,6 +145,8 @@ class iSarPanel(bpy.types.Panel):
         row.operator('object.isar_hole', icon="MOD_BOOLEAN", text=isar_lang['iHole'])
         row = col.row(align=True)
         row.operator("object.isar_window_bounding_boxers", icon="MOD_LATTICE", text=isar_lang['iBoundingBoxWindow'])
+        row = col.row(align=True)
+        row.operator("object.isar_tile", icon="MOD_BUILD", text=isar_lang['iRoof'])
         col = layout.column(align=True)
         col.operator('object.isar_create_orientation', icon="MANIPUL", text=isar_lang['iCreateOrientation'])
         row = col.row(align=True)
@@ -159,7 +162,7 @@ class iSarPanel(bpy.types.Panel):
         col = split.column(align=True)
         col.operator('wm.url_open', icon="LINK", text=isar_lang['iLink']).url = 'http://blender.stackexchange.com/'
 
-isar_classes = [ iSarPanel, iLanguage, iBoundingBox, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow, iAddon ]
+isar_classes = [ iSarPanel, iLanguage, iBoundingBox, iWipe, iOrthoCam, iConsole, iNtersect, iPoint, iGeometry, iPivotToSelected, iSeparate, iHole, iSelectionToCursor, iCreateOrientation, iBoundingBoxWindow, iAddon, iRoof ]
 
 def register():
     global handle_lang
